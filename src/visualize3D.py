@@ -22,7 +22,7 @@ def demo(weight_path, interp_factor, img_path):
     # load demo data
     img = cv2.imread(img_path)
 
-    img = gasuss_noise(img)
+    # img = gasuss_noise(img)
     img = img.reshape(1, 3, 128, 128)
     img = torch.from_numpy(img).float()
 
@@ -31,7 +31,6 @@ def demo(weight_path, interp_factor, img_path):
 
     strands = output[0].cpu().detach().numpy()  # hair strands
 
-    # axis-wise 1D gaussian filtering
     gaussian = cv2.getGaussianKernel(10, 3)
     for i in range(strands.shape[2]):
         for j in range(strands.shape[3]):

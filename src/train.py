@@ -19,7 +19,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=8)  # 32
-    parser.add_argument("--lr", type=float, default=0.0001)  # 0.001
+    parser.add_argument("--lr", type=float, default=0.0001)
     parser.add_argument("--lr_step", type=int, default=10)
     parser.add_argument("--save_dir", type=str, default="./weight/")
     parser.add_argument("--data", type=str, default="./")
@@ -58,7 +58,6 @@ def test(model, dataloader, device):
     tot_error = MyLoss().to(device)
 
     model.eval()
-    print("Testing...")
     for i, data in enumerate(dataloader, 0):
         img, convdata, visweight = data
 
@@ -69,9 +68,10 @@ def test(model, dataloader, device):
         output = model(img)
 
         # cal loss
-        pos = pos_error(output, convdata, visweight, verbose=True)
+        pos = pos_error(output, convdata, visweight)
         cur = cur_error(output, convdata, visweight)
         col = col_error(output, convdata)
+
         tot = tot_error(output, convdata, visweight)
 
     return pos.item(), cur.item(), col.item(), tot.item()
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
             log.info(
                 f"Epoch {epoch+1} | Loss[ Pos | Cur | Col | Total ]: "
-                f"[ {pos_loss:.4f} | {cur_loss:.4f} | {col_loss:.4f} | {tot_loss:.4f} ]"
+                f"[ {pos_loss:.8f} | {cur_loss:.8f} | {col_loss:.8f} | {tot_loss:.8f} ]"
             )
 
         # Save model by performance

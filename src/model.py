@@ -85,33 +85,11 @@ class MyLoss(nn.Module):
 
     def forward(self, output, convdata, visweight):
         # removing nested for-loops (0.238449s -> 0.001860s)
-        pos_loss = (
-            visweight[:, :, :, :]
-            .reshape(1, -1)
-            .mm(
-                torch.pow(
-                    (convdata[:, :, 0:3, :, :] - output[:, :, 0:3, :, :]), 2
-                ).reshape(-1, 3)
-            )
-            .sum()
-        )
-        cur_loss = (
-            visweight[:, :, :, :]
-            .reshape(1, -1)
-            .mm(
-                torch.pow((convdata[:, :, 3, :, :] - output[:, :, 3, :, :]), 2).reshape(
-                    -1, 1
-                )
-            )
-            .sum()
-        )
+        pos_loss = PosMSE().forward(output, convdata, visweight)
+        cur_loss = CurMSE().forward(output, convdata, visweight)
         col_loss = CollisionLoss().forward(output, convdata)
-        # print(pos_loss/(convdata.shape[0]*convdata.shape[1]*1024.0), cur_loss/(convdata.shape[0]*convdata.shape[1]*1024.0), col_loss)
-        return (
-            pos_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
-            + 1 * cur_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
-            + 1e-4 * col_loss
-        )
+
+        return pos_loss + cur_loss + col_loss
 
 
 class CollisionLoss(nn.Module):
@@ -137,67 +115,39 @@ class CollisionLoss(nn.Module):
         )
         D[D < 0] = 0
         C = torch.sum(L1 * D)
-        loss = C / (convdata.shape[0] * convdata.shape[1] * 1024.0)
-        return loss
+        return C / 1024.0
+        # loss = C / (convdata.shape[0] * convdata.shape[1] * 1024.0)
+        # return loss
 
 
 class PosMSE(nn.Module):
     def __init__(self):
         super(PosMSE, self).__init__()
 
-    def forward(self, output, convdata, visweight, verbose=False):
+    def forward(self, output, convdata, visweight):
         visweight = visweight[:, :, :, :].reshape(1, -1)
         e_squared = torch.pow(
             (convdata[:, :, 0:3, :, :] - output[:, :, 0:3, :, :]), 2
         ).reshape(-1, 3)
         loss = visweight.mm(e_squared).sum()
 
-        # if verbose:
-        #     # print("[Position Loss]")
+        # convdata.shape 8, 100, 4, 32, 32
+        return loss / 1024
 
-        #     visweight1 = (visweight == 10).float() * 10
-        #     vis_loss = visweight1.mm(e_squared).sum()
-        #     # print(
-        #     #     "\tvis: ",
-        #     #     (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-        #     # )
-
-        #     visweight2 = (visweight == 0.1).float() * 0.1
-        #     inv_loss = visweight2.mm(e_squared).sum()
-        #     # print(
-        #     #     "\tinv: ",
-        #     #     (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-        #     # )
-
-        return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
+        # return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
 
 
 class CurMSE(nn.Module):
     def __init__(self):
         super(CurMSE, self).__init__()
 
-    def forward(self, output, convdata, visweight, verbose=False):
+    def forward(self, output, convdata, visweight):
         visweight = visweight[:, :, :, :].reshape(1, -1)
         e_squared = torch.pow(
             (convdata[:, :, 3, :, :] - output[:, :, 3, :, :]), 2
         ).reshape(-1, 1)
         loss = visweight.mm(e_squared).sum()
 
-        # if verbose:
-        #     # print("[Curvature Loss]")
+        return loss / 1024
 
-        #     visweight1 = (visweight == 10).float() * 10
-        #     vis_loss = visweight1.mm(e_squared).sum()
-        #     # print(
-        #     #     "\tvis: ",
-        #     #     (vis_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-        #     # )
-
-        #     visweight2 = (visweight == 0.1).float() * 0.1
-        #     inv_loss = visweight2.mm(e_squared).sum()
-        #     # print(
-        #     #     "\tinv: ",
-        #     #     (inv_loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)).item(),
-        #     # )
-
-        return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
+        # return loss / (convdata.shape[0] * convdata.shape[1] * 1024.0)
