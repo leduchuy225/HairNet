@@ -61,6 +61,7 @@ class HairNetDataset(Dataset):
         current_visweight_path = self.data_path + str(current_index[0]) + ".vismap"
         current_visweight = np.load(current_visweight_path)
         current_img = cv2.imread(self.data_path + str(current_index[0]) + ".png")
+        print(f'Path: {str(current_index[0]) + ".png"} | Convdata: {str(current_convdata_index) + ".convdata"}')
 
         if self.noise_flag == 1:
             current_img = gasuss_noise(current_img)

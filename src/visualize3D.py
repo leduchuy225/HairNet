@@ -2,6 +2,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import random
 
 from model import Net
 from preprocessing import gasuss_noise
@@ -29,7 +30,7 @@ def demo(weight_path, interp_factor, img_path):
     # img = img.cuda()
     output = net(img, interp_factor)
 
-    strands = output[0].cpu().detach().numpy()  # hair strands
+    strands = output.squeeze().cpu().detach().numpy()  # hair strands
 
     gaussian = cv2.getGaussianKernel(10, 3)
     for i in range(strands.shape[2]):
@@ -80,4 +81,6 @@ def show3DhairPlotByStrands(strands):
     ax.set_xlim3d([avgx - RADIUS, avgx + RADIUS])
     ax.set_ylim3d([avgy - RADIUS, avgy + RADIUS])
     ax.set_zlim3d([avgz - RADIUS, avgz + RADIUS])
+    # plt.savefig(f"result_{random.randint(1, 10)}.png")
+    # plt.close(fig)
     plt.show()

@@ -18,8 +18,8 @@ logging.basicConfig(level=logging.INFO)
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", type=int, default=100)
-    parser.add_argument("--batch_size", type=int, default=8)  # 32
-    parser.add_argument("--lr", type=float, default=0.0001)
+    parser.add_argument("--batch_size", type=int, default=32)  
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--lr_step", type=int, default=10)
     parser.add_argument("--save_dir", type=str, default="./weight/")
     parser.add_argument("--data", type=str, default="./")
@@ -44,7 +44,6 @@ def train(model, dataloader, optimizer, device):
         my_loss = loss(output, convdata, visweight)
 
         my_loss.backward()
-
         optimizer.step()
 
     return my_loss
@@ -53,7 +52,7 @@ def train(model, dataloader, optimizer, device):
 def test(model, dataloader, device):
     pos_error = PosMSE().to(device)  # Position Loss
     cur_error = CurMSE().to(device)  # Curvature Loss
-    col_error = CollisionLoss().to(device)  # Collision Loss
+    # col_error = CollisionLoss().to(device)  # Collision Loss
 
     tot_error = MyLoss().to(device)
 
@@ -70,7 +69,7 @@ def test(model, dataloader, device):
         # cal loss
         pos = pos_error(output, convdata, visweight)
         cur = cur_error(output, convdata, visweight)
-        col = col_error(output, convdata)
+        col = torch.tensor(0.0)
 
         tot = tot_error(output, convdata, visweight)
 
@@ -116,7 +115,7 @@ if __name__ == "__main__":
 
     # setup optimizer & lr schedualer
     optimizer = optim.Adam(net.parameters(), lr=lr)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=lr_step, gamma=0.5)
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -140,7 +139,9 @@ if __name__ == "__main__":
         time_elapsed = int(round(time.time() * 1000)) - since
 
         # Logging
-        log.info(f"Epoch {epoch+1} | Loss: {train_loss:.8f} | time: {time_elapsed}ms")
+        log.info(f"Epoch {epoch+1} | Loss: {train_loss:.8f} | time: {time_elapsed}ms "
+                 f"| lr: {optimizer.param_groups[0]['lr']:.6f}")
+
         if test_step != 0 and (epoch + 1) % test_step == 0:
             pos_loss, cur_loss, col_loss, tot_loss = test(net, test_loader, device)
 

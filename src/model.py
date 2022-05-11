@@ -80,8 +80,11 @@ class Net(nn.Module):
 
 
 class MyLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, pos_weight=1.0, cur_weight=1.0, col_weight=1e-4):
         super(MyLoss, self).__init__()
+        self.pos_weight = pos_weight
+        self.cur_weight = cur_weight
+        self.col_weight = col_weight
 
     def forward(self, output, convdata, visweight):
         # removing nested for-loops (0.238449s -> 0.001860s)
@@ -89,7 +92,7 @@ class MyLoss(nn.Module):
         cur_loss = CurMSE().forward(output, convdata, visweight)
         col_loss = CollisionLoss().forward(output, convdata)
 
-        return pos_loss + cur_loss + col_loss
+        return self.pos_weight*pos_loss + self.cur_weight*cur_loss + self.col_weight*col_loss
 
 
 class CollisionLoss(nn.Module):
